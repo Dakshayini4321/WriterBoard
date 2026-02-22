@@ -1,0 +1,27 @@
+{
+  "name": "writer-integrity-system",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "prisma db push && next build",
+    "start": "next start",
+    "lint": "eslint",
+    "postinstall": "prisma generate"
+  },
+  "dependencies": {
+    "@vercel/blob": "^2.0.1",
+    "bcryptjs": "^3.0.3",
+    "crypto-js": "^4.2.0",
+    "mammoth": "^1.11.0",
+    "next": "16.1.6",
+    "react": "19.2.3",
+    "react-dom": "19.2.3"
+  },
+  "devDependencies": {
+    "@prisma/client": "^6.19.2",
+    "eslint": "^9",
+    "eslint-config-next": "16.1.6",
+    "prisma": "^6.19.2"
+  }
+}

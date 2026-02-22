@@ -1,0 +1,121 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  role      String   @default("WRITER") // ADMIN, WRITER
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  profile   Profile?
+  auditLogs AuditLog[]
+}
+
+model Profile {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id])
+  fullName     String?
+  workTypes    String?  // JSON stringified array
+  education    String?
+  experience   String?
+  bio          String?
+  phone        String?
+  timezone     String?
+  grammarScore Int?
+  policyScore  Int?
+  status       String   @default("ONBOARDING") // ONBOARDING, ACTIVE, SUSPENDED
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  assignments  Assignment[]
+  submissions  Submission[]
+  baselineMetrics String? // JSON string of style fingerprint
+}
+
+model Assignment {
+  id          String   @id @default(cuid())
+  writerId    String
+  writer      Profile  @relation(fields: [writerId], references: [id])
+  title       String
+  description String?
+  category    String?  // academic, technical, copywriting
+  wordCount   Int?
+  citationStyle String?
+  priority    String   @default("normal") // normal, high, urgent
+  deadline    DateTime
+  status      String   @default("PENDING") // PENDING, IN_PROGRESS, COMPLETED
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  submissions Submission[]
+}
+
+model Submission {
+  id              String   @id @default(cuid())
+  assignmentId    String
+  assignment      Assignment @relation(fields: [assignmentId], references: [id])
+  writerId        String
+  writer          Profile    @relation(fields: [writerId], references: [id])
+  content         String?    // Extracted text
+  fileUrl         String?
+  integrityScore  Float?
+  aiRiskScore     Float?
+  status          String   @default("PENDING_REVIEW") // PENDING_REVIEW, APPROVED, REJECTED, NEEDS_REWRITE
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  analysisResults AnalysisResult[]
+}
+
+model AnalysisResult {
+  id           String     @id @default(cuid())
+  submissionId String
+  submission   Submission @relation(fields: [submissionId], references: [id])
+  signals      String?    // JSON string
+  reasoning    String?
+  createdAt    DateTime   @default(now())
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id])
+  entityType  String
+  entityId    String
+  action      String
+  details     String?  // JSON string
+  createdAt   DateTime @default(now())
+}
+
+model SystemConfig {
+  id          String   @id @default(cuid())
+  key         String   @unique // e.g., 'llm_provider', 'openai_api_key'
+  value       String   // The actual value (encrypted if isSecret)
+  isSecret    Boolean  @default(false) // To mask in UI and encrypt in storage
+  category    String   @default("general") // general, llm, security, notifications
+  description String?
+  updatedAt   DateTime @updatedAt
+  updatedBy   String?  // User ID who last updated
+}
+
+model ApiUsageLog {
+  id              String   @id @default(cuid())
+  provider        String   // openai, anthropic, gemini, groq, mock
+  endpoint        String   // API endpoint called
+  requestSize     Int      // Size of request in bytes
+  responseSize    Int?     // Size of response in bytes
+  statusCode      Int?     // HTTP status code
+  success         Boolean  // Whether the call succeeded
+  errorMessage    String?  // Error message if failed
+  duration        Int      // Duration in milliseconds
+  submissionId    String?  // Related submission if applicable
+  createdAt       DateTime @default(now())
+}
